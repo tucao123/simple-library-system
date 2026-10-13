@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图书信息列表 - 图书管理系统</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://code.jquery.com/jquery-1.8.3.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>图书信息管理</h1>
+
+    <!-- 消息提示 -->
+    <% if (message) { %>
+      <div class="alert alert-<%= messageType %>">
+        <%= message %>
+      </div>
+    <% } %>
+
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <form action="/books" method="GET">
+        <label for="search">图书名称：</label>
+        <input type="text" id="search" name="search" value="<%= search %>" placeholder="请输入图书名称">
+        <button type="submit">查询</button>
+        <button type="button" onclick="location.href='/books'">显示全部</button>
+        <a href="/books/add" class="btn-add">新增</a>
+      </form>
+    </div>
+
+    <!-- 图书列表 -->
+    <table class="book-table">
+      <thead>
+        <tr>
+          <th>序号</th>
+          <th>图书编号</th>
+          <th>图书名称</th>
+          <th>图书类型</th>
+          <th>作者</th>
+          <th>出版社</th>
+          <th>是否借阅</th>
+          <th>入库人</th>
+          <th>入库时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (books.length === 0) { %>
+          <tr>
+            <td colspan="10" class="no-data">暂无数据</td>
+          </tr>
+        <% } else { %>
+          <% books.forEach((book, index) => { %>
+            <tr class="<%= index % 2 === 0 ? 'even' : 'odd' %>">
+              <td><%= (page - 1) * 5 + index + 1 %></td>
+              <td><%= book.bookCode %></td>
+              <td><%= book.bookName %></td>
+              <td><%= book.typeName %></td>
+              <td><%= book.bookAuthor %></td>
+              <td><%= book.publishPress %></td>
+              <td><%= book.borrowed === 1 ? '已借阅' : '未借阅' %></td>
+              <td><%= book.createdBy %></td>
+              <td><%= formatDate(book.creationTime) %></td>
+              <td class="actions">
+                <a href="/books/detail/<%= book.bookId %>">查看</a>
+                <a href="/books/edit/<%= book.bookId %>">修改</a>
+                <a href="#" class="delete-link" data-id="<%= book.bookId %>">删除</a>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+
+    <!-- 分页 -->
+    <% if (totalPages > 1) { %>
+      <div class="pagination">
+        <span>共 <%= total %> 条记录，第 <%= page %> / <%= totalPages %> 页</span>
+        <div>
+          <% if (page > 1) { %>
+            <a href="?search=<%= search %>&page=<%= page - 1 %>">上一页</a>
+          <% } %>
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <a href="?search=<%= search %>&page=<%= i %>" class="<%= i === page ? 'active' : '' %>"><%= i %></a>
+          <% } %>
+          <% if (page < totalPages) { %>
+            <a href="?search=<%= search %>&page=<%= page + 1 %>">下一页</a>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <script>
+    // 删除确认
+    $(document).ready(function() {
+      $('.delete-link').click(function(e) {
+        e.preventDefault();
+        const bookId = $(this).data('id');
+        if (confirm('确定删除该图书信息？')) {
+          $.ajax({
+            url: '/books/delete/' + bookId,
+            type: 'POST',
+            success: function() {
+              location.reload();
+            },
+            error: function() {
+              alert('删除失败！');
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

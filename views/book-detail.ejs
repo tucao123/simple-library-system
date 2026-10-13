@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图书详情 - 图书管理系统</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>图书详细信息</h1>
+
+    <table class="detail-table">
+      <tr>
+        <th class="label">图书编号：</th>
+        <td><%= book.bookCode %></td>
+      </tr>
+      <tr>
+        <th class="label">图书名称：</th>
+        <td><%= book.bookName %></td>
+      </tr>
+      <tr>
+        <th class="label">图书类型：</th>
+        <td><%= book.typeName %></td>
+      </tr>
+      <tr>
+        <th class="label">作者：</th>
+        <td><%= book.bookAuthor %></td>
+      </tr>
+      <tr>
+        <th class="label">出版社：</th>
+        <td><%= book.publishPress %></td>
+      </tr>
+      <tr>
+        <th class="label">出版日期：</th>
+        <td><%= formatDate(book.publishDate) %></td>
+      </tr>
+      <tr>
+        <th class="label">是否借阅：</th>
+        <td><%= book.borrowed === 1 ? '已借阅' : '未借阅' %></td>
+      </tr>
+      <tr>
+        <th class="label">入库人：</th>
+        <td><%= book.createdBy %></td>
+      </tr>
+      <tr>
+        <th class="label">入库时间：</th>
+        <td><%= formatDate(book.creationTime) %></td>
+      </tr>
+    </table>
+
+    <div class="form-actions">
+      <button type="button" onclick="history.back()">返回</button>
+    </div>
+  </div>
+</body>
+</html>
