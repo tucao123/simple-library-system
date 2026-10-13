@@ -40,17 +40,25 @@ cd simple-library-system
 npm install
 ```
 
-3. 初始化数据库
+3. 配置数据库连接
 ```bash
-mysql -u root -p < sql/init.sql
+# 复制 .env.example 为 .env 并填入你的 MySQL 配置
+cp .env.example .env
 ```
 
-4. 配置数据库连接（可选）
-```bash
-echo "DB_HOST=localhost
+编辑 `.env` 文件：
+```
+DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=library_db" > .env
+DB_PASSWORD=你的MySQL密码
+DB_NAME=library_db
+```
+
+4. 初始化数据库
+```bash
+npm run db:init
+# 或运行交互式脚本（支持自定义密码）
+node scripts/init-db.js
 ```
 
 5. 启动应用

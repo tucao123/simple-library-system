@@ -8,10 +8,10 @@ router.get('/', async (req, res) => {
   try {
     const search = req.query.search || '';
     const page = parseInt(req.query.page) || 1;
-    
+
     const result = await bookDAO.findAll(search, page);
     const types = await typeDAO.findAll();
-    
+
     res.render('book-list', {
       books: result.books,
       types,
@@ -19,8 +19,8 @@ router.get('/', async (req, res) => {
       page: result.page,
       totalPages: result.totalPages,
       total: result.total,
-      message: req.query.message,
-      messageType: req.query.type
+      message: req.query.message || '',
+      messageType: req.query.type || ''
     });
   } catch (err) {
     res.status(500).render('error', { message: '获取图书列表失败' });
@@ -44,7 +44,7 @@ router.get('/detail/:id', async (req, res) => {
 router.get('/add', async (req, res) => {
   try {
     const types = await typeDAO.findAll();
-    res.render('book-add', { types });
+    res.render('book-add', { types, message: '', messageType: '' });
   } catch (err) {
     res.status(500).render('error', { message: '加载新增页面失败' });
   }
@@ -80,7 +80,7 @@ router.get('/edit/:id', async (req, res) => {
       return res.redirect('/books?message=图书不存在&type=error');
     }
     const types = await typeDAO.findAll();
-    res.render('book-edit', { book, types });
+    res.render('book-edit', { book, types, message: req.query.message || '', messageType: req.query.type || '' });
   } catch (err) {
     res.status(500).render('error', { message: '加载修改页面失败' });
   }

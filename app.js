@@ -6,6 +6,7 @@ const { formatDate, formatShortDate } = require('./helpers/dateHelper');
 
 const bookRoutes = require('./routes/books');
 const typeRoutes = require('./routes/types');
+const statsRoutes = require('./routes/stats');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 路由
 app.use('/books', bookRoutes);
 app.use('/types', typeRoutes);
+app.use('/stats', statsRoutes);
 
 // 默认重定向到图书列表
 app.get('/', (req, res) => {

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图书类型管理 - 图书管理系统</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://code.jquery.com/jquery-1.8.3.min.js"></script>
+</head>
+<body>
+  <%- include('partials/nav', { active: 'types' }) %>
+
+  <div class="container">
+    <h1>图书类型管理</h1>
+
+    <% if (message) { %>
+      <div class="alert alert-<%= messageType %>"><%= message %></div>
+    <% } %>
+
+    <!-- 新增类型 -->
+    <div class="search-bar">
+      <form action="/types" method="POST" id="typeForm">
+        <label for="typeName">类型名称：</label>
+        <input type="text" id="typeName" name="typeName" placeholder="请输入图书类型名称">
+        <button type="submit">添加类型</button>
+      </form>
+    </div>
+
+    <!-- 类型列表 -->
+    <div class="type-grid">
+      <% if (types.length === 0) { %>
+        <div class="empty-tip">暂无图书类型，请先添加</div>
+      <% } else { %>
+        <% types.forEach(function(type) { %>
+          <div class="type-card">
+            <div class="type-card-head">
+              <span class="type-name"><%= type.typeName %></span>
+              <span class="type-count"><%= type.bookCount %> 本</span>
+            </div>
+            <form class="type-card-body" action="/types/<%= type.id %>" method="POST">
+              <input type="text" name="typeName" value="<%= type.typeName %>">
+              <div class="type-card-actions">
+                <button type="submit" class="btn-save">保存</button>
+                <button type="button" class="btn-delete" data-id="<%= type.id %>" data-count="<%= type.bookCount %>" data-name="<%= type.typeName %>">删除</button>
+              </div>
+            </form>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- 删除确认表单 -->
+  <form id="deleteTypeForm" method="POST" style="display:none;"></form>
+
+  <script>
+    $(document).ready(function() {
+      $('#typeForm').submit(function(e) {
+        if (!$.trim($('#typeName').val())) {
+          e.preventDefault();
+          alert('请输入类型名称！');
+        }
+      });
+
+      $('.btn-delete').click(function() {
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+        var count = parseInt($(this).data('count'), 10);
+        if (count > 0) {
+          alert('「' + name + '」类型下有 ' + count + ' 本图书，无法删除。');
+          return;
+        }
+        if (confirm('确定删除类型「' + name + '」？')) {
+          $('#deleteTypeForm').attr('action', '/types/' + id + '/delete').submit();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

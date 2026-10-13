@@ -7,10 +7,13 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <%- include('partials/nav', { active: '' }) %>
+
   <div class="container error-page">
     <h1>操作失败</h1>
     <p><%= message %></p>
     <button onclick="history.back()">返回上一页</button>
+    <a href="/books" class="btn-add">回到图书列表</a>
   </div>
 </body>
 </html>

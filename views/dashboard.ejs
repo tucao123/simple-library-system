@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>借阅统计 - 图书管理系统</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://code.jquery.com/jquery-1.8.3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+  <%- include('partials/nav', { active: 'stats' }) %>
+
+  <div class="container">
+    <h1>借阅统计看板</h1>
+
+    <!-- 数据概览卡片 -->
+    <div class="stat-cards">
+      <div class="stat-card stat-blue">
+        <div class="stat-label">图书总数</div>
+        <div class="stat-value"><%= borrowStats.total %><span class="stat-unit">本</span></div>
+        <div class="stat-foot">覆盖 <%= typeCount %> 种图书类型</div>
+      </div>
+      <div class="stat-card stat-yellow">
+        <div class="stat-label">已借阅</div>
+        <div class="stat-value"><%= borrowStats.borrowedCount %><span class="stat-unit">本</span></div>
+        <div class="stat-foot">借出中的图书</div>
+      </div>
+      <div class="stat-card stat-green">
+        <div class="stat-label">未借阅</div>
+        <div class="stat-value"><%= borrowStats.availableCount %><span class="stat-unit">本</span></div>
+        <div class="stat-foot">当前可借阅</div>
+      </div>
+      <div class="stat-card stat-purple">
+        <div class="stat-label">借阅率</div>
+        <div class="stat-value"><%= borrowRate %><span class="stat-unit">%</span></div>
+        <div class="stat-foot">已借 / 总数</div>
+      </div>
+    </div>
+
+    <!-- 图表区 -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">借阅状态分布</div>
+        <div id="borrowChart" class="chart-box"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">各类型图书数量</div>
+        <div id="typeChart" class="chart-box"></div>
+      </div>
+
+      <div class="chart-card chart-wide">
+        <div class="chart-title">各类型借阅情况对比</div>
+        <div id="compareChart" class="chart-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 服务端注入统计数据
+    var borrowStats = <%- JSON.stringify(borrowStats) %>;
+    var typeStats = <%- JSON.stringify(typeStats) %>;
+
+    // 检查 ECharts 是否加载成功
+    if (typeof echarts === 'undefined') {
+      document.querySelectorAll('.chart-box').forEach(function(box) {
+        box.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7f94;font-size:14px;">图表库加载失败，请检查网络连接</div>';
+      });
+    } else {
+      // ECharts 已加载，初始化图表
+      initCharts();
+    }
+
+    function initCharts() {
+
+    var PALETTE = {
+      blue: '#159aff',
+      cyan: '#66e1df',
+      yellow: '#ffd03b',
+      orange: '#ff6a3a',
+      green: '#0bb8af',
+      purple: '#544cff',
+      text: '#a0b4c8',
+      strong: '#e0e6ed',
+      grid: 'rgba(255,255,255,0.08)',
+      axis: 'rgba(255,255,255,0.15)'
+    };
+
+    var typeNames = [];
+    var typeTotals = [];
+    var typeBorrowed = [];
+    var typeAvailable = [];
+    for (var i = 0; i < typeStats.length; i++) {
+      typeNames.push(typeStats[i].typeName);
+      typeTotals.push(typeStats[i].total);
+      typeBorrowed.push(typeStats[i].borrowedCount);
+      typeAvailable.push(typeStats[i].availableCount);
+    }
+
+    var tooltipStyle = {
+      backgroundColor: 'rgba(10,22,40,0.95)',
+      borderColor: 'rgba(21,154,255,0.4)',
+      borderWidth: 1,
+      textStyle: { color: '#e0e6ed', fontSize: 13 }
+    };
+
+    function axisLabelStyle() {
+      return { color: PALETTE.text, fontSize: 12 };
+    }
+
+    // 图表 1：借阅状态环形图
+    var borrowChart = echarts.init(document.getElementById('borrowChart'));
+    borrowChart.setOption({
+      tooltip: Object.assign({ trigger: 'item', formatter: '{b}: {c} 本 ({d}%)' }, tooltipStyle),
+      legend: { bottom: 0, textStyle: { color: PALETTE.text }, itemWidth: 12, itemHeight: 12 },
+      series: [{
+        type: 'pie',
+        radius: ['48%', '72%'],
+        center: ['50%', '44%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: '#0d1f3c', borderWidth: 3, borderRadius: 6 },
+        label: {
+          show: true,
+          color: PALETTE.strong,
+          fontSize: 12,
+          formatter: '{b}\n{c} 本'
+        },
+        labelLine: { lineStyle: { color: PALETTE.axis } },
+        emphasis: { scaleSize: 8 },
+        data: [
+          { value: borrowStats.borrowedCount, name: '已借阅', itemStyle: { color: PALETTE.yellow } },
+          { value: borrowStats.availableCount, name: '未借阅', itemStyle: { color: PALETTE.blue } }
+        ]
+      }]
+    });
+
+    // 图表 2：各类型图书数量柱状图（渐变）
+    var typeChart = echarts.init(document.getElementById('typeChart'));
+    typeChart.setOption({
+      tooltip: Object.assign({ trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c} 本' }, tooltipStyle),
+      grid: { left: '3%', right: '4%', top: 24, bottom: '3%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: typeNames,
+        axisLabel: axisLabelStyle(),
+        axisLine: { lineStyle: { color: PALETTE.axis } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: axisLabelStyle(),
+        axisLine: { show: false },
+        splitLine: { lineStyle: { color: PALETTE.grid } }
+      },
+      series: [{
+        type: 'bar',
+        data: typeTotals,
+        barWidth: '48%',
+        itemStyle: {
+          borderRadius: [6, 6, 0, 0],
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: PALETTE.cyan },
+            { offset: 1, color: 'rgba(21,154,255,0.15)' }
+          ])
+        },
+        emphasis: {
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#8ef0ee' },
+              { offset: 1, color: 'rgba(21,154,255,0.35)' }
+            ])
+          }
+        }
+      }]
+    });
+
+    // 图表 3：各类型借阅情况堆叠对比
+    var compareChart = echarts.init(document.getElementById('compareChart'));
+    compareChart.setOption({
+      tooltip: Object.assign({ trigger: 'axis', axisPointer: { type: 'shadow' } }, tooltipStyle),
+      legend: {
+        data: ['已借阅', '未借阅'],
+        top: 0,
+        right: 8,
+        textStyle: { color: PALETTE.text },
+        itemWidth: 12,
+        itemHeight: 12
+      },
+      grid: { left: '3%', right: '4%', top: 44, bottom: '3%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: typeNames,
+        axisLabel: axisLabelStyle(),
+        axisLine: { lineStyle: { color: PALETTE.axis } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: axisLabelStyle(),
+        axisLine: { show: false },
+        splitLine: { lineStyle: { color: PALETTE.grid } }
+      },
+      series: [
+        {
+          name: '已借阅',
+          type: 'bar',
+          stack: 'total',
+          data: typeBorrowed,
+          barWidth: '46%',
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: PALETTE.orange },
+              { offset: 1, color: 'rgba(255,106,58,0.35)' }
+            ])
+          }
+        },
+        {
+          name: '未借阅',
+          type: 'bar',
+          stack: 'total',
+          data: typeAvailable,
+          barWidth: '46%',
+          itemStyle: {
+            borderRadius: [6, 6, 0, 0],
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: PALETTE.blue },
+              { offset: 1, color: 'rgba(21,154,255,0.3)' }
+            ])
+          }
+        }
+      ]
+    });
+
+      // 自适应窗口大小
+      $(window).resize(function() {
+        borrowChart.resize();
+        typeChart.resize();
+        compareChart.resize();
+      });
+    }
+  </script>
+</body>
+</html>

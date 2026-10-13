@@ -96,6 +96,44 @@ const bookDAO = {
     const sql = 'DELETE FROM book_info WHERE bookId = ?';
     const [result] = await pool.execute(sql, [id]);
     return result.affectedRows > 0;
+  },
+
+  // 借阅状态统计（总数 / 已借 / 未借）
+  async getBorrowStats() {
+    const sql = `
+      SELECT
+        COUNT(*) AS total,
+        COALESCE(SUM(CASE WHEN borrowed = 1 THEN 1 ELSE 0 END), 0) AS borrowedCount,
+        COALESCE(SUM(CASE WHEN borrowed = 0 THEN 1 ELSE 0 END), 0) AS availableCount
+      FROM book_info
+    `;
+    const [rows] = await pool.execute(sql);
+    const r = rows[0] || {};
+    return {
+      total: Number(r.total) || 0,
+      borrowedCount: Number(r.borrowedCount) || 0,
+      availableCount: Number(r.availableCount) || 0
+    };
+  },
+
+  // 按图书类型统计（含该类型借阅数）
+  async getTypeStats() {
+    const sql = `
+      SELECT t.typeName,
+             COUNT(b.bookId) AS total,
+             COALESCE(SUM(CASE WHEN b.borrowed = 1 THEN 1 ELSE 0 END), 0) AS borrowedCount
+      FROM book_type t
+      LEFT JOIN book_info b ON b.bookType = t.id
+      GROUP BY t.id, t.typeName
+      ORDER BY total DESC, t.id ASC
+    `;
+    const [rows] = await pool.execute(sql);
+    return rows.map(r => ({
+      typeName: r.typeName,
+      total: Number(r.total) || 0,
+      borrowedCount: Number(r.borrowedCount) || 0,
+      availableCount: (Number(r.total) || 0) - (Number(r.borrowedCount) || 0)
+    }));
   }
 };
 
